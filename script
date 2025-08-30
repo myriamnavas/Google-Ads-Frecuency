@@ -1,0 +1,76 @@
+function main() {
+  const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/135yp2fz6l7aE0-3NG8v0nB-jdtP_1Nr4pTYKztBLv3k/edit#gid=1702718939';
+  const SHEET_NAME = 'Usuarios únicos';
+
+  const spreadsheet = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  let sheet = spreadsheet.getSheetByName(SHEET_NAME);
+
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(SHEET_NAME);
+  } else {
+    sheet.clearContents();
+  }
+
+  sheet.appendRow(['Mes', 'Nombre de campaña', 'Usuarios únicos']);
+
+  const timeZone = 'Europe/Madrid';
+  const today = new Date();
+  const currentMonth = today.getMonth(); // enero es 0
+  const currentYear = today.getFullYear();
+
+  const months = generateMonths('2025-01', today); // Generamos los meses desde enero 2025 hasta el mes actual
+
+  for (let i = 0; i < months.length; i++) {
+    const [year, month] = months[i].split('-');
+    const startDate = `${year}-${month}-01`;
+    const endDate = getLastDayOfMonth(parseInt(year), parseInt(month));
+
+    const query = `
+      SELECT
+        campaign.name,
+        metrics.unique_users
+      FROM
+        campaign
+      WHERE
+        segments.date BETWEEN '${startDate}' AND '${endDate}'
+    `;
+
+    const report = AdsApp.report(query);
+    const rows = report.rows();
+    while (rows.hasNext()) {
+      const row = rows.next();
+      const campaignName = row['campaign.name'];
+      const uniqueUsers = row['metrics.unique_users'];
+      sheet.appendRow([`${year}-${month}`, campaignName, uniqueUsers]);
+    }
+  }
+
+  Logger.log('Datos exportados por mes desde enero hasta el mes actual');
+}
+
+// Función auxiliar para generar la lista de meses desde un mes de inicio hasta la fecha actual
+function generateMonths(startMonth, endDate) {
+  const months = [];
+  let [startYear, startMonthNum] = startMonth.split('-').map(Number);
+  const endYear = endDate.getFullYear();
+  const endMonth = endDate.getMonth() + 1;
+
+  while (startYear < endYear || (startYear === endYear && startMonthNum <= endMonth)) {
+    const monthStr = (startMonthNum < 10 ? '0' : '') + startMonthNum;
+    months.push(`${startYear}-${monthStr}`);
+    startMonthNum++;
+    if (startMonthNum > 12) {
+      startMonthNum = 1;
+      startYear++;
+    }
+  }
+
+  return months;
+}
+
+// Función auxiliar para obtener el último día del mes en formato yyyy-MM-dd
+function getLastDayOfMonth(year, month) {
+  const timeZone = 'Europe/Madrid';
+  const date = new Date(year, month, 0); // día 0 del mes siguiente = último día del mes actual
+  return Utilities.formatDate(date, timeZone, 'yyyy-MM-dd');
+}
