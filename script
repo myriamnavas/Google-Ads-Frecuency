@@ -1,5 +1,5 @@
 function main() {
-  const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/135yp2fz6l7aE0-3NG8v0nB-jdtP_1Nr4pTYKztBLv3k/edit#gid=1702718939';
+  const SPREADSHEET_URL = 'PON_AQUI_LA_URL_DE_TU_GSHEET';
   const SHEET_NAME = 'Usuarios únicos';
 
   const spreadsheet = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
